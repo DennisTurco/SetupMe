@@ -2,7 +2,7 @@
 
 ## Description
 
-**SetupMe** is a command-line wrapper designed to simplify the use of Chocolatey, Winget, or both — making it easier to install, update, and manage software on Windows.
+**SetupMe** is a command-line wrapper designed to simplify the use of Chocolatey, Winget, or both ï¿½ making it easier to install, update, and manage software on Windows.
 It can also execute setup scripts defined in YAML files, allowing you to automatically configure a new machine with a single command.
 
 ## Features
@@ -12,3 +12,11 @@ It can also execute setup scripts defined in YAML files, allowing you to automat
 * Supports YAML setup files for batch installations.
 * Easily extensible for future operations (copy files, reboot, etc.).
 * Ideal as a personal setup automation tool for new machines.
+
+## Usage
+
+To simple test it you have to run the dotnet program using:
+
+```bash
+dotnet run
+```

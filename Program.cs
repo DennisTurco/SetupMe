@@ -1,3 +1,3 @@
 ﻿using SetupMe;
 
-CliOperations.Run();
+CliOperations.StartCli();

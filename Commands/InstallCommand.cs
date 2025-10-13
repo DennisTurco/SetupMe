@@ -15,15 +15,15 @@ namespace SetupMe.Commands
         [Command("install", Description = "Install a package")]
         public async Task InstallAsync(
             [Argument(Description = "Package name to install")] string? packageName,
-            [Option('p', Description = "Specify package name")] string? packageOption,
-            [Option("v", Description = "Package version")] string? version = null,
-            [Option("f", Description = "Force reinstall")] bool force = false,
-            [Option("s", Description = "Package source (winget/choco)")] string? source = null,
-            [Option("q", Description = "Quiet mode (no output)")] bool quiet = false,
-            [Option("y", Description = "Confirm all prompts")] bool yes = false
+            [Option('p', Description = "Specify package name")] string? package,
+            [Option('v', Description = "Package version")] string? version = null,
+            [Option('f', Description = "Force reinstall")] bool force = false,
+            [Option('s', Description = "Package source (winget/choco)")] string? source = null,
+            [Option('q', Description = "Quiet mode (no output)")] bool quiet = false,
+            [Option('y', Description = "Confirm all prompts")] bool yes = false
         )
         {
-            var pkg = packageName ?? packageOption;
+            var pkg = packageName ?? package;
 
             if (string.IsNullOrEmpty(pkg))
             {

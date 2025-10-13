@@ -2,12 +2,12 @@ using Cocona;
 
 namespace SetupMe.Commands
 {
-    public class RunCommand
+    public class RunConfigurationCommand
     {
-        public RunCommand() { }
+        public RunConfigurationCommand() { }
 
         [Command("run", Description = "Run a configured yaml file")]
-        public async Task RunAsync()
+        public async Task RunConfigurationAsync()
         {
             
         }

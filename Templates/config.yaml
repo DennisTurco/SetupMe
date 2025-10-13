@@ -1,0 +1,17 @@
+example1: 
+    install:
+        flags:
+            force: true
+            source: "choco"
+            quiet: true
+            confirm: true
+        packages:
+            - git
+            - vscode
+
+example2:
+    install:
+        flags: {}
+        packages:
+            - git
+            - vscode 

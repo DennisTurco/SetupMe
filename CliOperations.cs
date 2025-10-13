@@ -24,8 +24,9 @@ namespace SetupMe
             app.AddCommands<InstallCommand>();
             app.AddCommands<UninstallCommand>();
             app.AddCommands<UpdateCommand>();
-            app.AddCommands<RunCommand>();
-            
+            app.AddCommands<RunConfigurationCommand>();
+            app.AddCommands<EditConfigurationCommand>();
+
             app.Run();
         }
     }

@@ -1,0 +1,22 @@
+example1:
+  name: "example1"
+  installs:
+    - flags:
+        force: true
+        source: "choco"
+        quiet: true
+        confirm: true
+      packages:
+        - git
+        - vscode
+
+example2:
+  name: "example2"
+  installs:
+    - flags: {}
+      packages:
+        - git
+    - flags:
+        source: "winget"
+      packages:
+        - vscode

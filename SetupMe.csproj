@@ -9,6 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

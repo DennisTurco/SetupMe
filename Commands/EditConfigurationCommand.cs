@@ -1,11 +1,17 @@
 ﻿using Cocona;
+using setupme.Interfaces;
 using System.Diagnostics;
 
 namespace SetupMe.Commands
 {
     public class EditConfigurationCommand
     {
-        private readonly string ConfigPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../Templates/config.yaml"));
+        private readonly IAppConfig _appConfig;
+
+        public EditConfigurationCommand(IAppConfig appConfig)
+        {
+            _appConfig = appConfig;
+        }
 
         [Command("edit", Description = "Edit the yaml configuration file")]
         public void EditConfiguration(
@@ -18,11 +24,12 @@ namespace SetupMe.Commands
                 "notepad++" => "notepad++.exe",
                 _ => "notepad.exe"
             };
-            
+
+            var filePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, _appConfig.ConfigFilePath));
             var psi = new ProcessStartInfo
             {
                 FileName = "cmd.exe",
-                Arguments = $"/C {editorCommand} \"{ConfigPath}\"",
+                Arguments = $"/C {editorCommand} \"{filePath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };

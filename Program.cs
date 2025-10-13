@@ -1,0 +1,3 @@
+﻿using SetupMe;
+
+CliOperations.Run();

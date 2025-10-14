@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+﻿using CliWrap.Builders;
 using setupme.Entities;
 using setupme.Exceptions;
+using setupme.Services;
 using SetupMe.Interfaces;
 
 namespace SetupMe.Installers
@@ -18,72 +19,62 @@ namespace SetupMe.Installers
         {
             if (!IsChocolateyInstalled())
             {
-                InstallChocolately();
+                await InstallChocolately();
             }
 
             Console.WriteLine($"Installing package {packageName} via chocolately");
 
-            string command = $"choco install {packageName}";
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("install").Add(packageName);
 
-            if (string.IsNullOrEmpty(flags.Version))
-            {
-                command += $" --version {flags.Version}";
-            }
-            if (flags.Force)
-            {
-                command += " --force";
-            }
-            if (flags.Quiet)
-            {
-                command += " --limitoutput";
-            }
-            if (flags.Confirm)
-            {
-                command += " --yes";
-            }
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                if (flags.Force)
+                    args.Add("--force");
+                if (flags.Quiet)
+                    args.Add("--silent");
+                if (flags.Confirm)
+                    args.Add("--yes");
+            };
+            
+            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
 
-            Process.Start("CMD.exe", command);
-
-            await Task.CompletedTask;
+            if (exitCode != 0)
+            {
+                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
+            }
         }
 
         private bool IsChocolateyInstalled()
         {
-            if (File.Exists(_chocoPath))
-            {
-                return true;
-            }
-
-            return false;
+            return File.Exists(_chocoPath);
         }
 
-        private void InstallChocolately()
+        private async Task InstallChocolately()
         {
             try
             {
-                Console.WriteLine("Chocolatey is not already installed, installing...");
-                var psi = new ProcessStartInfo
+                Action<ArgumentsBuilder> arguments = args =>
                 {
-                    FileName = "powershell.exe",
-                    Arguments = @"-NoProfile -ExecutionPolicy Bypass -Command ""Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))""",
-                    UseShellExecute = true,
-                    Verb = "runas" // Run as admin
+                    args.Add("-NoProfile")
+                        .Add("-ExecutionPolicy").Add("Bypass")
+                        .Add("-Command")
+                        .Add(@"Set-ExecutionPolicy Bypass -Scope Process -Force; " +
+                                @"[System.Net.ServicePointManager]::SecurityProtocol = " +
+                                @"[System.Net.ServicePointManager]::SecurityProtocol -bor 3072; " +
+                                @"iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))");
                 };
 
-                var process = Process.Start(psi);
-                if (process == null)
-                {
-                    throw new PackageInstallerException("Failed to start PowerShell process. Possibly canceled or not found.");
-                }
-                process.WaitForExit();
+                var exitCode = await CliWrapperService.ExecuteCliCommand("powershell.exe", arguments);
 
-                if (process.ExitCode == 0 && File.Exists(_chocoPath))
+                if (exitCode == 0 && File.Exists(_chocoPath))
                 {
-                    throw new PackageInstallerException("Chocolatey installed successfully.");
+                    Console.WriteLine("Chocolatey installed successfully.");
                 }
                 else
                 {
-                    throw new PackageInstallerException("Failed to install Chocolatey.");
+                    throw new PackageInstallerException($"Failed to install Chocolatey. Exit code: {exitCode}");
                 }
             }
             catch (Exception ex)

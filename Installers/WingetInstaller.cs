@@ -1,7 +1,8 @@
-﻿using setupme.Entities;
+﻿using CliWrap.Builders;
+using setupme.Entities;
 using setupme.Exceptions;
+using setupme.Services;
 using SetupMe.Interfaces;
-using System.Diagnostics;
 
 namespace SetupMe.Installers
 {
@@ -18,64 +19,53 @@ namespace SetupMe.Installers
         {
             if (!IsWingetInstalled())
             {
-                InstallWinget();
+                await InstallWinget();
             }
 
             Console.WriteLine($"⬇ Installing package {packageName} via winget");
 
-            string command = $"winget install {packageName}";
-
-            if (string.IsNullOrEmpty(flags.Version))
+            Action<ArgumentsBuilder> arguments = args =>
             {
-                command += $" --version {flags.Version}";
-            }
-            if (flags.Force)
-            {
-                command += " --force";
-            }
-            if (flags.Quiet)
-            {
-                command += " --silent";
-            }
+                args.Add("install").Add(packageName);
 
-            Process.Start("CMD.exe", command);
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                if (flags.Force)
+                    args.Add("--force");
+                if (flags.Quiet)
+                    args.Add("--silent");
+            };
 
-            await Task.CompletedTask;
+            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
+            }
         }
 
         private bool IsWingetInstalled()
         {
-            if (File.Exists(_wingetPath))
-            {
-                return true;
-            }
-
-            return false;
+            return File.Exists(_wingetPath);
         }
 
-        private void InstallWinget()
+        private async Task InstallWinget()
         {
             try
             {
                 Console.WriteLine("Winget is not installed. Installing App Installer from Microsoft Store...");
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = @"-NoProfile -ExecutionPolicy Bypass -Command ""Add-AppxPackage -Path 'https://aka.ms/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.appxbundle'""",
-                    UseShellExecute = true,
-                    Verb = "runas" // Run as admin
+
+                Action<ArgumentsBuilder> arguments = args => {
+                    args.Add("-NoProfile")
+                        .Add("-ExecutionPolicy").Add("Bypass")
+                        .Add("-Command")
+                        .Add("Add-AppxPackage -Path 'https://aka.ms/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.appxbundle'");
                 };
 
-                var process = Process.Start(psi);
-                if (process == null)
-                {
-                    throw new PackageInstallerException("Failed to start PowerShell process. Possibly canceled or not found.");
-                }
-                process.WaitForExit();
+                var exitCode = await CliWrapperService.ExecuteCliCommand("powershell.exe", arguments);
 
-                if (process.ExitCode == 0 && File.Exists(_wingetPath))
+                if (exitCode == 0 && File.Exists(_wingetPath))
                 {
-                    throw new PackageInstallerException("Winget installed successfully.");
+                    Console.WriteLine("Winget installed successfully.");
                 }
                 else
                 {

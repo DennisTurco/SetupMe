@@ -29,19 +29,26 @@ namespace SetupMe
 
             //builder.Services.AddTransient<RunConfigurationCommand>(); // only for testing
 
-            // commands registrations
-            var app = builder.Build();
-            app.AddCommands<InstallCommand>();
-            app.AddCommands<UninstallCommand>();
-            app.AddCommands<UpdateCommand>();
-            app.AddCommands<RunConfigurationCommand>();
-            app.AddCommands<EditConfigurationCommand>();
+            try
+            {
+                // commands registrations
+                var app = builder.Build();
+                app.AddCommands<InstallCommand>();
+                app.AddCommands<UninstallCommand>();
+                app.AddCommands<UpdateCommand>();
+                app.AddCommands<RunConfigurationCommand>();
+                app.AddCommands<EditConfigurationCommand>();
 
-            // for testing
-            //var runConfigCommand = app.Services.GetRequiredService<RunConfigurationCommand>();
-            //runConfigCommand.RunConfiguration();
+                // for testing
+                //var runConfigCommand = app.Services.GetRequiredService<RunConfigurationCommand>();
+                //runConfigCommand.RunConfiguration("example1");
 
-            app.Run();
+                app.Run(); 
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 }

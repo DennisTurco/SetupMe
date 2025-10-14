@@ -1,5 +1,6 @@
 using Cocona;
 using setupme.Entities;
+using setupme.Exceptions;
 using setupme.Interfaces;
 using YamlDotNet.Serialization;
 
@@ -24,11 +25,10 @@ namespace SetupMe.Commands
 
             if (config == null)
             {
-                Console.Error.WriteLine($"Error: configuration {name} does not exist");
-                return;
+                throw new YamlFormatException($"Yaml configuration {name} does not exist");
             }
 
-            Console.WriteLine($"Running configuration {name}");
+            RunConfiguration(config);
         }
 
         private Dictionary<string, Config> DeserializeYamlConfig()
@@ -36,7 +36,25 @@ namespace SetupMe.Commands
             var deserializer = new DeserializerBuilder().Build();
             var filePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, _appConfig.ConfigFilePath));
             var yamlText = File.ReadAllText(filePath);
-            return deserializer.Deserialize<Dictionary<string, Config>>(yamlText);
+
+            try
+            {
+                return deserializer.Deserialize<Dictionary<string, Config>>(yamlText);
+            }
+            catch (Exception)
+            {
+                throw new YamlFormatException("Yaml configuration il bad formatted, you can edit it by run 'setupme edit' command");
+            }
+        }
+
+        private void RunConfiguration(Config config)
+        {
+            Console.WriteLine($"Running configuration {config.Name}");
+        }
+
+        private void SimulateConfiguration(Config config)
+        {
+
         }
     }
 }

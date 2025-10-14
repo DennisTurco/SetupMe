@@ -1,3 +1,5 @@
+﻿using setupme.Entities;
+using setupme.Exceptions;
 using SetupMe.Interfaces;
 using System.Diagnostics;
 
@@ -5,33 +7,33 @@ namespace SetupMe.Installers
 {
     public class WingetInstaller : IPackageInstaller
     {
-        private readonly string WingetPath;
+        private readonly string _wingetPath;
 
         public WingetInstaller()
         {
-            WingetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "winget.exe");
+            _wingetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "winget.exe");
         }
 
-        public async Task InstallPackage(string packageName, string? version, bool force, bool quiet, bool autoConfirm)
+        public async Task InstallPackage(string packageName, Flags flags)
         {
             if (!IsWingetInstalled())
             {
                 InstallWinget();
             }
 
-            Console.WriteLine($"Installing package {packageName} via winget");
+            Console.WriteLine($"⬇ Installing package {packageName} via winget");
 
             string command = $"winget install {packageName}";
 
-            if (string.IsNullOrEmpty(version))
+            if (string.IsNullOrEmpty(flags.Version))
             {
-                command += $" --version {version}";
+                command += $" --version {flags.Version}";
             }
-            if (force)
+            if (flags.Force)
             {
                 command += " --force";
             }
-            if (quiet)
+            if (flags.Quiet)
             {
                 command += " --silent";
             }
@@ -43,7 +45,7 @@ namespace SetupMe.Installers
 
         private bool IsWingetInstalled()
         {
-            if (File.Exists(WingetPath))
+            if (File.Exists(_wingetPath))
             {
                 return true;
             }
@@ -67,22 +69,22 @@ namespace SetupMe.Installers
                 var process = Process.Start(psi);
                 if (process == null)
                 {
-                    throw new Exception("Failed to start PowerShell process. Possibly canceled or not found.");
+                    throw new PackageInstallerException("Failed to start PowerShell process. Possibly canceled or not found.");
                 }
                 process.WaitForExit();
 
-                if (process.ExitCode == 0 && File.Exists(WingetPath))
+                if (process.ExitCode == 0 && File.Exists(_wingetPath))
                 {
-                    Console.WriteLine("Winget installed successfully.");
+                    throw new PackageInstallerException("Winget installed successfully.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("Failed to install Winget. Make sure your system supports App Installer.");
+                    throw new PackageInstallerException("Failed to install Winget. Make sure your system supports App Installer.");
                 }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error installing Winget: {ex.Message}");
+                throw new PackageInstallerException($"Error installing Winget: {ex.Message}");
             }
         }
     }

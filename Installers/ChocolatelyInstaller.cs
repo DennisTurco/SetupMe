@@ -1,19 +1,20 @@
-﻿
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using setupme.Entities;
+using setupme.Exceptions;
 using SetupMe.Interfaces;
 
 namespace SetupMe.Installers
 {
     public class ChocolatelyInstaller : IPackageInstaller
     {
-        private readonly string ChocoPath;
+        private readonly string _chocoPath;
 
         public ChocolatelyInstaller()
         {
-            ChocoPath = Environment.ExpandEnvironmentVariables(@"%ProgramData%\chocolatey\bin\choco.exe");
+            _chocoPath = Environment.ExpandEnvironmentVariables(@"%ProgramData%\chocolatey\bin\choco.exe");
         }
         
-        public async Task InstallPackage(string packageName, string? version, bool force, bool quiet, bool autoConfirm)
+        public async Task InstallPackage(string packageName, Flags flags)
         {
             if (!IsChocolateyInstalled())
             {
@@ -24,19 +25,19 @@ namespace SetupMe.Installers
 
             string command = $"choco install {packageName}";
 
-            if (string.IsNullOrEmpty(version))
+            if (string.IsNullOrEmpty(flags.Version))
             {
-                command += $" --version {version}";
+                command += $" --version {flags.Version}";
             }
-            if (force)
+            if (flags.Force)
             {
                 command += " --force";
             }
-            if (quiet)
+            if (flags.Quiet)
             {
                 command += " --limitoutput";
             }
-            if (autoConfirm)
+            if (flags.Confirm)
             {
                 command += " --yes";
             }
@@ -48,7 +49,7 @@ namespace SetupMe.Installers
 
         private bool IsChocolateyInstalled()
         {
-            if (File.Exists(ChocoPath))
+            if (File.Exists(_chocoPath))
             {
                 return true;
             }
@@ -72,22 +73,22 @@ namespace SetupMe.Installers
                 var process = Process.Start(psi);
                 if (process == null)
                 {
-                    throw new Exception("Failed to start PowerShell process. Possibly canceled or not found.");
+                    throw new PackageInstallerException("Failed to start PowerShell process. Possibly canceled or not found.");
                 }
                 process.WaitForExit();
 
-                if (process.ExitCode == 0 && File.Exists(ChocoPath))
+                if (process.ExitCode == 0 && File.Exists(_chocoPath))
                 {
-                    Console.WriteLine("Chocolatey installed successfully.");
+                    throw new PackageInstallerException("Chocolatey installed successfully.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("Failed to install Chocolatey.");
+                    throw new PackageInstallerException("Failed to install Chocolatey.");
                 }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error installing Chocolatey: {ex.Message}");
+                throw new PackageInstallerException($"Error installing Chocolatey: {ex.Message}");
             }
         }
     }

@@ -1,5 +1,7 @@
-using Cocona;
+﻿using Cocona;
 using SetupMe.Interfaces;
+using setupme.Entities;
+using setupme.Exceptions;
 
 namespace SetupMe.Commands
 {
@@ -27,21 +29,29 @@ namespace SetupMe.Commands
 
             if (string.IsNullOrEmpty(pkg))
             {
-                Console.Error.WriteLine("Error: You must specify a package name (either as argument or --package/-p).");
-                return;
+                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
             }
 
             var installer = installers.FirstOrDefault(i =>
                 (source is null or "" or "choco") ||
                 (source == "winget"));
 
-            if (installer is null)
+            if (installer == null)
             {
-                Console.Error.WriteLine($"Error: Source '{source}' not found.");
-                return;
+                throw new SourceNotFoundException($"Source '{source}' not found.");
             }
 
-            await installer.InstallPackage(pkg, version, force, quiet, yes);
+            var flags = new Flags
+            {
+                Version = version,
+                Force = force,
+                Source = source,
+                Quiet = quiet,
+                Confirm = yes
+            };
+
+            // TODO: if fails and the source is null try using a different installer for every installer we have
+            await installer.InstallPackage(pkg, flags);
 
             Console.WriteLine($"Package {pkg} installed succesfully!");
         }

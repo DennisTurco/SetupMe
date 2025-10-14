@@ -20,3 +20,6 @@ example2:
         source: "winget"
       packages:
         - vscode
+  actions:
+    - name: command
+      run: "echo Ciao"

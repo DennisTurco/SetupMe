@@ -7,7 +7,7 @@ namespace SetupMe.Commands
         public UpdateCommand() { }
 
         [Command("update", Description = "Update a package")]
-        public async Task UpdateAsync(string packageName)
+        public void Update(string packageName)
         {
             
         }

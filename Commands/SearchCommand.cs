@@ -4,7 +4,7 @@ namespace SetupMe.Commands
     {
         public SearchCommand() { }
 
-        public async Task SearchAsync()
+        public void Search()
         {
             
         }

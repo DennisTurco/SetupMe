@@ -7,7 +7,7 @@ namespace SetupMe.Commands
         public UninstallCommand() { }
 
         [Command("uninstall", Description = "Uninstall a package")]
-        public async Task UninstallAsync(string packageName)
+        public void Uninstall(string packageName)
         {
             
         }

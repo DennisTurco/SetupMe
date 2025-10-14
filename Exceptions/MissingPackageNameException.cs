@@ -1,10 +1,10 @@
 ﻿namespace setupme.Exceptions
 {
     /// <summary>
-    /// Thrown when no package name is specified.
+    /// Thrown when no there is an error during the configuration running.
     /// </summary>
-    public class MissingPackageNameException : Exception
+    public class RunConfigurationException : Exception
     {
-        public MissingPackageNameException(string message) : base(message) { }
+        public RunConfigurationException(string message) : base(message) { }
     }
 }

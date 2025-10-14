@@ -1,6 +1,8 @@
-﻿using Cocona;
+﻿using CliWrap.Builders;
+using Cocona;
 using setupme.Interfaces;
-using System.Diagnostics;
+using setupme.Services;
+using SetupMe.Interfaces;
 
 namespace SetupMe.Commands
 {
@@ -14,7 +16,7 @@ namespace SetupMe.Commands
         }
 
         [Command("edit", Description = "Edit the yaml configuration file")]
-        public void EditConfiguration(
+        public async Task EditConfigurationAsync(
             [Option('e', Description = "Specify preferred editor")] string? editor
         )
         {
@@ -26,15 +28,15 @@ namespace SetupMe.Commands
             };
 
             var filePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, _appConfig.ConfigFilePath));
-            var psi = new ProcessStartInfo
+
+            Action<ArgumentsBuilder> arguments = args =>
             {
-                FileName = "cmd.exe",
-                Arguments = $"/C {editorCommand} \"{filePath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true
+                args.Add("/C")
+                    .Add(editorCommand)
+                    .Add(filePath);
             };
 
-            Process.Start(psi);
+            await CliWrapperService.ExecuteCliCommand("cmd.exe", arguments);
         }
     }
 }

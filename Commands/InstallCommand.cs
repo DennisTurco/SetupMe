@@ -7,11 +7,11 @@ namespace SetupMe.Commands
 {
     public class InstallCommand
     {
-        private readonly IEnumerable<IPackageInstaller> installers;
+        private readonly IEnumerable<IPackageInstaller> _installers;
 
         public InstallCommand(IEnumerable<IPackageInstaller> installers)
         {
-            this.installers = installers;
+            _installers = installers;
         }
 
         [Command("install", Description = "Install a package")]
@@ -32,8 +32,8 @@ namespace SetupMe.Commands
                 throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
             }
 
-            var installer = installers.FirstOrDefault(i =>
-                (source is null or "" or "choco") ||
+            var installer = _installers.FirstOrDefault(i =>
+                (source == "choco") ||
                 (source == "winget"));
 
             if (installer == null)
@@ -43,15 +43,38 @@ namespace SetupMe.Commands
 
             var flags = new Flags
             {
-                Version = version,
+                Version = version ?? string.Empty,
                 Force = force,
-                Source = source,
+                Source = source ?? string.Empty,
                 Quiet = quiet,
                 Confirm = yes
             };
 
-            // TODO: if fails and the source is null try using a different installer for every installer we have
-            await installer.InstallPackage(pkg, flags);
+            if (source != null)
+            {
+                await installer.InstallPackage(pkg, flags);
+            }
+            else
+            {
+                var lastTrySuccedeed = false;
+                foreach (var inst in _installers)
+                {
+                    try
+                    {
+                        await inst.InstallPackage(pkg, flags);
+                        lastTrySuccedeed = true;
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                }
+
+                if (!lastTrySuccedeed)
+                {
+                    throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
+                }
+            }
 
             Console.WriteLine($"Package {pkg} installed succesfully!");
         }

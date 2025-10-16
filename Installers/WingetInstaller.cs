@@ -17,12 +17,9 @@ namespace SetupMe.Installers
 
         public async Task InstallPackage(string packageName, Flags flags)
         {
-            if (!IsWingetInstalled())
-            {
-                await InstallWinget();
-            }
+            await InstallWingetIfMissing();
 
-            Console.WriteLine($"⬇ Installing package {packageName} via winget");
+            Console.WriteLine($"Installing package {packageName} via winget");
 
             Action<ArgumentsBuilder> arguments = args =>
             {
@@ -30,7 +27,30 @@ namespace SetupMe.Installers
 
                 if (!string.IsNullOrEmpty(flags.Version))
                     args.Add("--version").Add(flags.Version);
-                if (flags.Force)
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        public async Task UninstallPackage(string packageName, Flags flags)
+        {
+            await InstallWingetIfMissing();
+
+            Console.WriteLine($"Uninstalling package {packageName} via winget");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("uninstall").Add(packageName);
+
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                if (flags.AllVersions)
+                    args.Add("--all");
+                else if (flags.Force)
                     args.Add("--force");
                 if (flags.Quiet)
                     args.Add("--silent");
@@ -43,9 +63,55 @@ namespace SetupMe.Installers
             }
         }
 
-        private bool IsWingetInstalled()
+        public async Task UpgradePackage(string packageName, Flags flags)
         {
-            return File.Exists(_wingetPath);
+            await InstallWingetIfMissing();
+
+            Console.WriteLine($"upgrading package {packageName} via winget");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("upgrade").Add(packageName);
+
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                else if (flags.Force)
+                    args.Add("--force");
+                if (flags.Quiet)
+                    args.Add("--silent");
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Winget failed to upgrade {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        public async Task SearchPackage(string packageName)
+        {
+            await InstallWingetIfMissing();
+
+            Console.WriteLine($"Serach package {packageName} via winget");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("serach").Add(packageName);
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Winget failed to search {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        private async Task InstallWingetIfMissing()
+        {
+            if (!File.Exists(_wingetPath))
+            {
+                await InstallWinget();
+            }
         }
 
         private async Task InstallWinget()

@@ -23,7 +23,7 @@ namespace SetupMe.Commands
             string editorCommand = editor?.ToLower() switch
             {
                 "vscode" or "code" => "code",
-                "notepad++" => "notepad++.exe",
+                "notepad++" or "notepadplusplus" => "notepadplusplus.exe",
                 _ => "notepad.exe"
             };
 

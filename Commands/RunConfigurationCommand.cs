@@ -27,21 +27,42 @@ namespace SetupMe.Commands
         {
             var configs = DeserializeYamlConfig();
             var config = configs.FirstOrDefault(kv => kv.Key == name).Value;
+            config.Name = name;
 
             if (config == null)
             {
                 throw new YamlFormatException($"Yaml configuration {name} does not exist");
             }
 
-            var installCommand = new InstallCommand(_installers);
-            foreach (var installOption in config.InstallOptions)
-            {
-                await RunConfiguration(name, installOption, installCommand);
-            }
+            Console.WriteLine($"Running configuration {name}");
 
-            foreach (var action in config.Actions)
+            try
             {
-                await RunAction(action);
+                var uninstallCommand = new UninstallCommand(_installers);
+                foreach (var options in config.UninstallOptions)
+                {
+                    await UninstallFromConfiguration(name, options, uninstallCommand);
+                }
+
+                var upgradeCommand = new UpgradeCommand(_installers);
+                foreach (var options in config.UpgradeOptions)
+                {
+                    await UpgradeFromConfiguration(name, options, upgradeCommand);
+                }
+
+                var installCommand = new InstallCommand(_installers);
+                foreach (var options in config.InstallOptions)
+                {
+                    await InstallFromConfiguration(name, options, installCommand);
+                }
+
+                foreach (var action in config.Actions)
+                {
+                    await RunAction(action);
+                }
+            } catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
             }
         }
 
@@ -61,14 +82,36 @@ namespace SetupMe.Commands
             }
         }
 
-        private async Task RunConfiguration(string configName, InstallOptions installOption, InstallCommand installCommand)
+        private async Task InstallFromConfiguration(string configName, PackageOptions options, InstallCommand installCommand)
         {
-            Console.WriteLine($"Running configuration {configName}");
+            Console.WriteLine($"Installing packages from configuration {configName}");
 
-            var flags = installOption.Flags;
-            foreach (var package in installOption.Packages)
+            var flags = options.Flags;
+            foreach (var package in options.Packages)
             {
                 await installCommand.InstallAsync(package, null, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
+            }
+        }
+
+        private async Task UninstallFromConfiguration(string configName, PackageOptions options, UninstallCommand uninstallCommand)
+        {
+            Console.WriteLine($"Uninstalling packages from configuration {configName}");
+
+            var flags = options.Flags;
+            foreach (var package in options.Packages)
+            {
+                await uninstallCommand.UninstallAsync(package, null, flags.Version, flags.AllVersions, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
+            }
+        }
+
+        private async Task UpgradeFromConfiguration(string configName, PackageOptions options, UpgradeCommand upgradeCommand)
+        {
+            Console.WriteLine($"Upgrading packages from configuration {configName}");
+
+            var flags = options.Flags;
+            foreach (var package in options.Packages)
+            {
+                await upgradeCommand.UpgradeAsync(package, null, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
             }
         }
 
@@ -97,11 +140,6 @@ namespace SetupMe.Commands
             {
                 throw new RunConfigurationException($"Action {action.Name} exited with error");
             }
-        }
-
-        private void SimulateConfiguration(Config config)
-        {
-
         }
     }
 }

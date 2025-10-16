@@ -1,5 +1,4 @@
 example1:
-  name: "example1"
   installs:
     - flags:
         force: true
@@ -11,32 +10,56 @@ example1:
         - vscode
 
 example2:
-  name: "example2"
   installs:
-    - flags: {}
-      packages:
+    - packages:
         - git
     - flags:
         source: "winget"
       packages:
         - vscode
+  uninstalls:
+    - flags:
+        source: "choco"
+        confirm: true
+        quiet: true
+      packages:
+        - some_package
   actions:
-    - name: command
-      run: "echo Ciao"
+    - name: "command"
+      run: "echo ciao"
 
+example3:
+  # uninstalls:
+  #   - flags:
+  #       source: "choco"
+  #       confirm: true
+  #       quiet: true
+  #     packages:
+  #       - bonjour
+  #       - silverlight
+  installs:
+    - flags:
+        source: "choco"
+        confirm: true
+        quiet: true
+      packages:
+        - bonjour
+  actions:
+    - name: "test1"
+      run: "echo test uno"
+    - name: "test2"
+      run: "echo test due"
 
 gaming:
-  name: "gaming"
   installs:
     - flags:
         version: "1.2.3"
       packages:
         - discord
-    - flags:
-      packages:
+    - packages:
         - steam
         - gog
         - epicgames
   actions:
-    - name: reboot
-      run: "echo rebooting syste"
+    - name: "reboot"
+      run: "echo rebooting system"

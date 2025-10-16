@@ -17,10 +17,7 @@ namespace SetupMe.Installers
         
         public async Task InstallPackage(string packageName, Flags flags)
         {
-            if (!IsChocolateyInstalled())
-            {
-                await InstallChocolately();
-            }
+            await InstallChocolatelyIfMissing();
 
             Console.WriteLine($"Installing package {packageName} via chocolately");
 
@@ -39,16 +36,92 @@ namespace SetupMe.Installers
             };
             
             var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
-
             if (exitCode != 0)
             {
-                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
+                throw new Exception($"Chocolately failed to install {packageName}. Exit code: {exitCode}");
             }
         }
 
-        private bool IsChocolateyInstalled()
+        public async Task UninstallPackage(string packageName, Flags flags)
         {
-            return File.Exists(_chocoPath);
+            await InstallChocolatelyIfMissing();
+
+            Console.WriteLine($"Uninstalling package {packageName} via chocolately");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("uninstall").Add(packageName);
+
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                if (flags.AllVersions)
+                    args.Add("--allversions");
+                else if (flags.Force)
+                    args.Add("--force");
+                if (flags.Quiet)
+                    args.Add("--silent").Add("--limitoutput");
+                if (flags.Confirm)
+                    args.Add("--yes");
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Chocolately failed to uninstall {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        public async Task UpgradePackage(string packageName, Flags flags)
+        {
+            await InstallChocolatelyIfMissing();
+
+            Console.WriteLine($"Upgrading package {packageName} via chocolately");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("upgrade").Add(packageName);
+
+                if (!string.IsNullOrEmpty(flags.Version))
+                    args.Add("--version").Add(flags.Version);
+                else if (flags.Force)
+                    args.Add("--force");
+                if (flags.Quiet)
+                    args.Add("--silent");
+                if (flags.Confirm)
+                    args.Add("--yes");
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Chocolately failed to upgrade {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        public async Task SearchPackage(string packageName)
+        {
+            await InstallChocolatelyIfMissing();
+
+            Console.WriteLine($"Serach package {packageName} via chocolately");
+
+            Action<ArgumentsBuilder> arguments = args =>
+            {
+                args.Add("serach").Add(packageName);
+            };
+
+            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Chocolately failed to search {packageName}. Exit code: {exitCode}");
+            }
+        }
+
+        private async Task InstallChocolatelyIfMissing()
+        {
+            if (!File.Exists(_chocoPath))
+            {
+                await InstallChocolately();
+            }
         }
 
         private async Task InstallChocolately()

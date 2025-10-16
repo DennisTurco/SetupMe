@@ -50,30 +50,36 @@ namespace SetupMe.Commands
                 Confirm = yes
             };
 
-            if (source != null)
+            try
             {
-                await installer.InstallPackage(pkg, flags);
-            }
-            else
-            {
-                var lastTrySuccedeed = false;
-                foreach (var inst in _installers)
+                if (source != null)
                 {
-                    try
-                    {
-                        await inst.InstallPackage(pkg, flags);
-                        lastTrySuccedeed = true;
-                    }
-                    catch (Exception)
-                    {
-                        continue;
-                    }
+                    await installer.InstallPackage(pkg, flags);
                 }
+                else
+                {
+                    var lastTrySuccedeed = false;
+                    foreach (var inst in _installers)
+                    {
+                        try
+                        {
+                            await inst.InstallPackage(pkg, flags);
+                            lastTrySuccedeed = true;
+                        }
+                        catch (Exception)
+                        {
+                            continue;
+                        }
+                    }
 
-                if (!lastTrySuccedeed)
-                {
-                    throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
+                    if (!lastTrySuccedeed)
+                    {
+                        throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
+                    }
                 }
+            } catch (Exception)
+            {
+                throw new PackageInstallerException($"Failed to install {pkg}, the package is non-existing or the installer failed the install process");
             }
 
             Console.WriteLine($"Package {pkg} installed succesfully!");

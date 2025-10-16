@@ -35,7 +35,7 @@ namespace SetupMe
                 var app = builder.Build();
                 app.AddCommands<InstallCommand>();
                 app.AddCommands<UninstallCommand>();
-                app.AddCommands<UpdateCommand>();
+                app.AddCommands<UpgradeCommand>();
                 app.AddCommands<RunConfigurationCommand>();
                 app.AddCommands<EditConfigurationCommand>();
 

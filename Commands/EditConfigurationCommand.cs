@@ -15,9 +15,9 @@ namespace SetupMe.Commands
             _appConfig = appConfig;
         }
 
-        [Command("edit", Description = "Edit the yaml configuration file")]
+        [Command("edit", Description = "Opens the YAML configuration file in your preferred text editor.")]
         public async Task EditConfigurationAsync(
-            [Option('e', Description = "Specify preferred editor")] string? editor
+            [Option('e', Description = "Specify which editor to use (e.g. 'vscode', 'notepad++', 'notepad'). Defaults to Notepad if not specified.")] string? editor = null
         )
         {
             string editorCommand = editor?.ToLower() switch

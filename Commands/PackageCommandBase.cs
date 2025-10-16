@@ -12,16 +12,6 @@ namespace setupme.Commands
             Installers = installers;
         }
 
-        protected string GetPackageName(string? packageName, string? packageOption)
-        {
-            var pkg = packageName ?? packageOption;
-            if (string.IsNullOrEmpty(pkg))
-            {
-                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
-            }
-            return pkg;
-        }
-
         protected IPackageInstaller? GetInstallerBySource(string? source)
         {
             if (string.IsNullOrEmpty(source)) return null;

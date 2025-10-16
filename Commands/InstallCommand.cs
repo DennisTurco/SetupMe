@@ -10,18 +10,16 @@ namespace SetupMe.Commands
     {
         public InstallCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
-        [Command("install", Description = "Install a package")]
+        [Command("install", Description = "Installs a package from the specified source or from all available sources.")]
         public async Task InstallAsync(
-            [Argument(Description = "Package name to install")] string? packageName,
-            [Option('p', Description = "Specify package name")] string? package,
-            [Option('v', Description = "Package version")] string? version = null,
-            [Option('f', Description = "Force reinstall")] bool force = false,
-            [Option('s', Description = "Package source (winget/choco)")] string? source = null,
-            [Option('q', Description = "Quiet mode (no output)")] bool quiet = false,
-            [Option('y', Description = "Confirm all prompts")] bool yes = false
+            [Argument(Description = "The name of the package to install.")] string package,
+            [Option('v', Description = "Specify the package version to install. If omitted, the latest version is used.")] string? version = null,
+            [Option('f', Description = "Force reinstallation, even if the package is already installed.")] bool force = false,
+            [Option('s', Description = "Specify the package source (e.g. 'winget' or 'choco'). If omitted, all sources are tried.")] string? source = null,
+            [Option('q', Description = "Run in quiet mode with minimal console output.")] bool quiet = false,
+            [Option('y', Description = "Automatically confirm all prompts and proceed without asking.")] bool yes = false
         )
         {
-            string pkg = GetPackageName(packageName, package);
             var installer = GetInstallerBySource(source);
 
             var flags = new Flags
@@ -37,23 +35,23 @@ namespace SetupMe.Commands
             {
                 if (installer != null)
                 {
-                    await installer.InstallPackage(pkg, flags);
+                    await installer.InstallPackage(package, flags);
                 }
                 else
                 {
-                    var success = await TryAllInstallersAsync(i => i.InstallPackage(pkg, flags));
+                    var success = await TryAllInstallersAsync(i => i.InstallPackage(package, flags));
                     if (!success)
                     {
-                        throw new PackageInstallerException($"No installer could install {pkg}.");
+                        throw new PackageInstallerException($"No installer could install {package}.");
                     }
                 }
             }
             catch (Exception)
             {
-                throw new PackageInstallerException($"Failed to install {pkg}. The package may not exist or installation failed.");
+                throw new PackageInstallerException($"Failed to install {package}. The package may not exist or installation failed.");
             }
 
-            PrintSuccess("installed", pkg);
+            PrintSuccess("installed", package);
         }
     }
 }

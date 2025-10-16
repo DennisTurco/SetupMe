@@ -10,19 +10,17 @@ namespace SetupMe.Commands
     {
         public UninstallCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
-        [Command("uninstall", Description = "Uninstall a package")]
+        [Command("uninstall", Description = "Removes a previously installed package from the system.")]
         public async Task UninstallAsync(
-            [Argument(Description = "Package name to unistall")] string? packageName,
-            [Option('p', Description = "Specify package name")] string? package,
-            [Option('v', Description = "Package version")] string? version = null,
-            [Option('a', Description = "All version, default false")] bool all = false,
-            [Option('f', Description = "Force the behaviour")] bool force = false,
-            [Option('s', Description = "Package source (winget/choco)")] string? source = null,
-            [Option('q', Description = "Quiet mode (no output)")] bool quiet = false,
-            [Option('y', Description = "Confirm all prompts")] bool yes = false
+            [Argument(Description = "The name of the package to uninstall.")] string package,
+            [Option('v', Description = "Specify the package version to uninstall (if multiple versions are installed).")] string? version = null,
+            [Option('a', Description = "Uninstall all versions of the package (default: false).")] bool all = false,
+            [Option('f', Description = "Force the uninstallation, ignoring dependency or safety checks.")] bool force = false,
+            [Option('s', Description = "Specify the package source (e.g. 'winget' or 'choco'). If omitted, all sources are tried.")] string? source = null,
+            [Option('q', Description = "Run in quiet mode with minimal output.")] bool quiet = false,
+            [Option('y', Description = "Automatically confirm all prompts and proceed without asking.")] bool yes = false
         )
         {
-            var pkg = GetPackageName(packageName, package);
             var installer = GetInstallerBySource(source);
 
             var flags = new Flags
@@ -39,22 +37,22 @@ namespace SetupMe.Commands
             {
                 if (installer != null)
                 {
-                    await installer.UninstallPackage(pkg, flags);
+                    await installer.UninstallPackage(package, flags);
                 }
                 else
                 {
-                    var success = await TryAllInstallersAsync(i => i.UninstallPackage(pkg, flags));
+                    var success = await TryAllInstallersAsync(i => i.UninstallPackage(package, flags));
                     if (!success)
                     {
-                        throw new PackageInstallerException($"No installer could install {pkg}.");
+                        throw new PackageInstallerException($"No installer could install {package}.");
                     }
                 }
             } catch (Exception)
             {
-                throw new PackageInstallerException($"Failed to uninstall {pkg}, the package is non-existing or the installer failed the uninstall process");
+                throw new PackageInstallerException($"Failed to uninstall {package}, the package is non-existing or the installer failed the uninstall process");
             }
 
-            PrintSuccess("uninstalled", pkg);
+            PrintSuccess("uninstalled", package);
         }
     }
 }

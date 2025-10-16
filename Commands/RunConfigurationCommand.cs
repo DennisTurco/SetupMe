@@ -20,9 +20,9 @@ namespace SetupMe.Commands
             _installers = installers;
         }
 
-        [Command("run", Description = "Run a configured yaml file")]
+        [Command("run", Description = "Executes a predefined configuration from the YAML file, performing all specified installs, upgrades, uninstalls, and actions.")]
         public async Task RunConfigurationAsync(
-            [Argument(Description = "Configuration name to run")] string name
+            [Argument(Description = "The name of the configuration to execute, as defined in the YAML file.")] string name
         )
         {
             var configs = DeserializeYamlConfig();
@@ -89,7 +89,7 @@ namespace SetupMe.Commands
             var flags = options.Flags;
             foreach (var package in options.Packages)
             {
-                await installCommand.InstallAsync(package, null, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
+                await installCommand.InstallAsync(package, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
             }
         }
 
@@ -100,7 +100,7 @@ namespace SetupMe.Commands
             var flags = options.Flags;
             foreach (var package in options.Packages)
             {
-                await uninstallCommand.UninstallAsync(package, null, flags.Version, flags.AllVersions, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
+                await uninstallCommand.UninstallAsync(package, flags.Version, flags.AllVersions, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
             }
         }
 
@@ -111,7 +111,7 @@ namespace SetupMe.Commands
             var flags = options.Flags;
             foreach (var package in options.Packages)
             {
-                await upgradeCommand.UpgradeAsync(package, null, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
+                await upgradeCommand.UpgradeAsync(package, flags.Version, flags.Force, flags.Source, flags.Quiet, flags.Confirm);
             }
         }
 

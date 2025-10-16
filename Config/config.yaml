@@ -39,7 +39,6 @@ example3:
   #       - silverlight
   installs:
     - flags:
-        source: "choco"
         confirm: true
         quiet: true
       packages:

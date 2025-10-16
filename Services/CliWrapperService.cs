@@ -1,5 +1,6 @@
 ﻿using CliWrap;
 using CliWrap.Builders;
+using CliWrap.EventStream;
 
 namespace setupme.Services
 {
@@ -7,14 +8,39 @@ namespace setupme.Services
     {
         public static async Task<int> ExecuteCliCommand(string processName, Action<ArgumentsBuilder> builder)
         {
-            var cli = await Cli.Wrap(processName)
-                .WithArguments(builder)
-                .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
-                .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
+            var cli = Cli.Wrap(processName)
+                .WithArguments(builder);
+
+            int exitCode = await PrintColoredOutputAndGetExitCode(cli);
+
+            await cli
                 .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
-            return cli?.ExitCode ?? -1;
+            return exitCode;
+        }
+
+        private static async Task<int> PrintColoredOutputAndGetExitCode(Command cli)
+        {
+            await foreach (var command in cli.ListenAsync())
+            {
+                switch (command)
+                {
+                    case StandardOutputCommandEvent stdOut:
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine($"OUT> {stdOut.Text}");
+                        Console.ResetColor();
+                        break;
+                    case StandardErrorCommandEvent stdErr:
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine($"ERR> {stdErr.Text}");
+                        Console.ResetColor();
+                        break;
+                    case ExitedCommandEvent exited:
+                        return exited.ExitCode;
+                }
+            }
+            return -1;
         }
     }
 }

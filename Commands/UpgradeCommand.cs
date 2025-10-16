@@ -1,18 +1,14 @@
 using Cocona;
+using setupme.Commands;
 using setupme.Entities;
 using setupme.Exceptions;
 using SetupMe.Interfaces;
 
 namespace SetupMe.Commands
 {
-    public class UpgradeCommand
+    public class UpgradeCommand : PackageCommandBase
     {
-        private readonly IEnumerable<IPackageInstaller> _installers;
-
-        public UpgradeCommand(IEnumerable<IPackageInstaller> installers)
-        {
-            _installers = installers;
-        }
+        public UpgradeCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
         [Command("update", Description = "Update a package")]
         public async Task UpgradeAsync(
@@ -25,16 +21,8 @@ namespace SetupMe.Commands
             [Option('y', Description = "Confirm all prompts")] bool yes = false
         )
         {
-            var pkg = packageName ?? package;
-
-            if (pkg == null)
-            {
-                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
-            }
-
-            var installer = _installers.FirstOrDefault(i =>
-                (source == "choco") ||
-                (source == "winget"));
+            var pkg = GetPackageName(packageName, package);
+            var installer = GetInstallerBySource(source);
 
             var flags = new Flags
             {
@@ -45,33 +33,27 @@ namespace SetupMe.Commands
                 Confirm = yes,
             };
 
-            if (installer != null)
-            {
-                await installer.UpgradePackage(pkg, flags);
-            }
-            else
-            {
-                var lastTrySuccedeed = false;
-                foreach (var inst in _installers)
+            try
+            { 
+                if (installer != null)
                 {
-                    try
+                    await installer.UpgradePackage(pkg, flags);
+                }
+                else
+                {
+                    var success = await TryAllInstallersAsync(i => i.UpgradePackage(pkg, flags));
+                    if (!success)
                     {
-                        await inst.UpgradePackage(pkg, flags);
-                        lastTrySuccedeed = true;
-                    }
-                    catch (Exception)
-                    {
-                        continue;
+                        throw new PackageInstallerException($"No installer could install {pkg}.");
                     }
                 }
-
-                if (!lastTrySuccedeed)
-                {
-                    throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
-                }
+            }
+            catch (Exception)
+            {
+                throw new PackageInstallerException($"Failed to uninstall {pkg}, the package is non-existing or the installer failed the uninstall process");
             }
 
-            Console.WriteLine($"Package {pkg} upgraded succesfully!");
+            PrintSuccess("upgraded", pkg);
         }
     }
 }

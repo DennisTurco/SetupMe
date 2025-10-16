@@ -2,17 +2,13 @@
 using SetupMe.Interfaces;
 using setupme.Entities;
 using setupme.Exceptions;
+using setupme.Commands;
 
 namespace SetupMe.Commands
 {
-    public class InstallCommand
+    public class InstallCommand : PackageCommandBase
     {
-        private readonly IEnumerable<IPackageInstaller> _installers;
-
-        public InstallCommand(IEnumerable<IPackageInstaller> installers)
-        {
-            _installers = installers;
-        }
+        public InstallCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
         [Command("install", Description = "Install a package")]
         public async Task InstallAsync(
@@ -25,21 +21,8 @@ namespace SetupMe.Commands
             [Option('y', Description = "Confirm all prompts")] bool yes = false
         )
         {
-            var pkg = packageName ?? package;
-
-            if (string.IsNullOrEmpty(pkg))
-            {
-                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
-            }
-
-            var installer = _installers.FirstOrDefault(i =>
-                (source == "choco") ||
-                (source == "winget"));
-
-            if (installer == null)
-            {
-                throw new SourceNotFoundException($"Source '{source}' not found.");
-            }
+            string pkg = GetPackageName(packageName, package);
+            var installer = GetInstallerBySource(source);
 
             var flags = new Flags
             {
@@ -52,37 +35,25 @@ namespace SetupMe.Commands
 
             try
             {
-                if (source != null)
+                if (installer != null)
                 {
                     await installer.InstallPackage(pkg, flags);
                 }
                 else
                 {
-                    var lastTrySuccedeed = false;
-                    foreach (var inst in _installers)
+                    var success = await TryAllInstallersAsync(i => i.InstallPackage(pkg, flags));
+                    if (!success)
                     {
-                        try
-                        {
-                            await inst.InstallPackage(pkg, flags);
-                            lastTrySuccedeed = true;
-                        }
-                        catch (Exception)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (!lastTrySuccedeed)
-                    {
-                        throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
+                        throw new PackageInstallerException($"No installer could install {pkg}.");
                     }
                 }
-            } catch (Exception)
+            }
+            catch (Exception)
             {
-                throw new PackageInstallerException($"Failed to install {pkg}, the package is non-existing or the installer failed the install process");
+                throw new PackageInstallerException($"Failed to install {pkg}. The package may not exist or installation failed.");
             }
 
-            Console.WriteLine($"Package {pkg} installed succesfully!");
+            PrintSuccess("installed", pkg);
         }
     }
 }

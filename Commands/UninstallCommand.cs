@@ -1,18 +1,14 @@
 using Cocona;
+using setupme.Commands;
 using setupme.Entities;
 using setupme.Exceptions;
 using SetupMe.Interfaces;
 
 namespace SetupMe.Commands
 {
-    public class UninstallCommand
+    public class UninstallCommand : PackageCommandBase
     {
-        private readonly IEnumerable<IPackageInstaller> _installers;
-
-        public UninstallCommand(IEnumerable<IPackageInstaller> installers)
-        {
-            _installers = installers;
-        }
+        public UninstallCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
         [Command("uninstall", Description = "Uninstall a package")]
         public async Task UninstallAsync(
@@ -26,21 +22,8 @@ namespace SetupMe.Commands
             [Option('y', Description = "Confirm all prompts")] bool yes = false
         )
         {
-            var pkg = packageName ?? package;
-
-            if (string.IsNullOrEmpty(pkg))
-            {
-                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
-            }
-
-            var installer = _installers.FirstOrDefault(i =>
-                (source == "choco") ||
-                (source == "winget"));
-
-            if (installer == null)
-            {
-                throw new SourceNotFoundException($"Source '{source}' not found.");
-            }
+            var pkg = GetPackageName(packageName, package);
+            var installer = GetInstallerBySource(source);
 
             var flags = new Flags
             {
@@ -54,38 +37,24 @@ namespace SetupMe.Commands
 
             try
             {
-                if (source != null)
+                if (installer != null)
                 {
                     await installer.UninstallPackage(pkg, flags);
                 }
                 else
                 {
-                    var lastTrySuccedeed = false;
-                    foreach (var inst in _installers)
+                    var success = await TryAllInstallersAsync(i => i.UninstallPackage(pkg, flags));
+                    if (!success)
                     {
-                        try
-                        {
-                            await inst.UninstallPackage(pkg, flags);
-                            lastTrySuccedeed = true;
-                        }
-                        catch (Exception)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (!lastTrySuccedeed)
-                    {
-                        throw new PackageInstallerException($"Tried all possible installers, but there is no {pkg} avaiable, make sure it exists");
+                        throw new PackageInstallerException($"No installer could install {pkg}.");
                     }
                 }
             } catch (Exception)
             {
                 throw new PackageInstallerException($"Failed to uninstall {pkg}, the package is non-existing or the installer failed the uninstall process");
             }
-            
 
-            Console.WriteLine($"Package {pkg} uninstalled succesfully!");
+            PrintSuccess("uninstalled", pkg);
         }
     }
 }

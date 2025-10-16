@@ -29,11 +29,7 @@ namespace SetupMe.Installers
                     args.Add("--version").Add(flags.Version);
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "install");
         }
 
         public async Task UninstallPackage(string packageName, Flags flags)
@@ -56,18 +52,14 @@ namespace SetupMe.Installers
                     args.Add("--silent");
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Winget failed to install {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "uninstall");
         }
 
         public async Task UpgradePackage(string packageName, Flags flags)
         {
             await InstallWingetIfMissing();
 
-            Console.WriteLine($"upgrading package {packageName} via winget");
+            Console.WriteLine($"Upgrading package {packageName} via winget");
 
             Action<ArgumentsBuilder> arguments = args =>
             {
@@ -81,11 +73,7 @@ namespace SetupMe.Installers
                     args.Add("--silent");
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Winget failed to upgrade {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "upgrade");
         }
 
         public async Task SearchPackage(string packageName)
@@ -99,10 +87,15 @@ namespace SetupMe.Installers
                 args.Add("serach").Add(packageName);
             };
 
+            await ExecuteCommand(packageName, arguments, "search");
+        }
+
+        private async Task ExecuteCommand(string packageName, Action<ArgumentsBuilder> arguments, string actionName)
+        {
             var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
             if (exitCode != 0)
             {
-                throw new Exception($"Winget failed to search {packageName}. Exit code: {exitCode}");
+                throw new Exception($"Winget failed to {actionName} {packageName}. Exit code: {exitCode}");
             }
         }
 

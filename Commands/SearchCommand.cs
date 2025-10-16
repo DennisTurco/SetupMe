@@ -1,17 +1,13 @@
 using Cocona;
+using setupme.Commands;
 using setupme.Exceptions;
 using SetupMe.Interfaces;
 
 namespace SetupMe.Commands
 {
-    public class SearchCommand
+    public class SearchCommand : PackageCommandBase
     {
-        private readonly IEnumerable<IPackageInstaller> _installers;
-
-        public SearchCommand(IEnumerable<IPackageInstaller> installers)
-        {
-            _installers = installers;
-        }
+        public SearchCommand(IEnumerable<IPackageInstaller> installers) : base(installers) { }
 
         public async Task SearchAsync(
             [Argument(Description = "Package name to unistall")] string? packageName,
@@ -19,47 +15,30 @@ namespace SetupMe.Commands
             [Option('s', Description = "Package source (winget/choco)")] string? source
         )
         {
-            var pkg = packageName ?? package;
+            var pkg = GetPackageName(packageName, package);
+            var installer = GetInstallerBySource(source);
 
-            if (pkg == null)
+            try
             {
-                throw new MissingPackageNameException("You must specify a package name (either as argument or --package/-p).");
-            }
-
-            var installer = _installers.FirstOrDefault(i =>
-                (source == "choco") ||
-                (source == "winget"));
-
-            if (installer == null)
-            {
-                throw new SourceNotFoundException($"Source '{source}' not found.");
-            }
-
-            if (source != null)
-            {
-                await installer.SearchPackage(pkg);
-            }
-            else
-            {
-                var lastTrySuccedeed = false;
-                foreach (var inst in _installers)
+                if (installer != null)
                 {
-                    try
+                    await installer.SearchPackage(pkg);
+                }
+                else
+                {
+                    var success = await TryAllInstallersAsync(i => i.SearchPackage(pkg));
+                    if (!success)
                     {
-                        await inst.SearchPackage(pkg);
-                        lastTrySuccedeed = true;
-                    }
-                    catch (Exception)
-                    {
-                        continue;
+                        throw new PackageInstallerException($"No installer could install {pkg}.");
                     }
                 }
-
-                if (!lastTrySuccedeed)
-                {
-                    Console.WriteLine($"Tried all possible installers, but there is no { pkg } avaiable");
-                }
             }
+            catch (Exception)
+            {
+                throw new PackageInstallerException($"Failed to uninstall {pkg}, the package is non-existing or the installer failed the uninstall process");
+            }
+
+            PrintSuccess("upgraded", pkg);
         }
     }
 }

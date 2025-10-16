@@ -35,11 +35,7 @@ namespace SetupMe.Installers
                     args.Add("--yes");
             };
             
-            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Chocolately failed to install {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "install");
         }
 
         public async Task UninstallPackage(string packageName, Flags flags)
@@ -64,11 +60,7 @@ namespace SetupMe.Installers
                     args.Add("--yes");
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Chocolately failed to uninstall {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "uninstall");
         }
 
         public async Task UpgradePackage(string packageName, Flags flags)
@@ -91,11 +83,7 @@ namespace SetupMe.Installers
                     args.Add("--yes");
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
-            if (exitCode != 0)
-            {
-                throw new Exception($"Chocolately failed to upgrade {packageName}. Exit code: {exitCode}");
-            }
+            await ExecuteCommand(packageName, arguments, "upgrade");
         }
 
         public async Task SearchPackage(string packageName)
@@ -109,10 +97,15 @@ namespace SetupMe.Installers
                 args.Add("serach").Add(packageName);
             };
 
+            await ExecuteCommand(packageName, arguments, "search");
+        }
+
+        private async Task ExecuteCommand(string packageName, Action<ArgumentsBuilder> arguments, string actionName)
+        {
             var exitCode = await CliWrapperService.ExecuteCliCommand("choco", arguments);
             if (exitCode != 0)
             {
-                throw new Exception($"Chocolately failed to search {packageName}. Exit code: {exitCode}");
+                throw new Exception($"Chocolately failed to {actionName} {packageName}. Exit code: {exitCode}");
             }
         }
 

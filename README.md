@@ -20,3 +20,5 @@ To simple test it you have to run the dotnet program using:
 ```bash
 dotnet run
 ```
+
+*Make sure to execute the program with privileges mode*

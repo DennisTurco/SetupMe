@@ -6,12 +6,12 @@ namespace setupme.Services
 {
     public class CliWrapperService
     {
-        public static async Task<int> ExecuteCliCommand(string processName, Action<ArgumentsBuilder> builder)
+        public static async Task<int> ExecuteCliCommand(string processName, Action<ArgumentsBuilder> builder, bool silentMode = true)
         {
             var cli = Cli.Wrap(processName)
                 .WithArguments(builder);
 
-            int exitCode = await PrintColoredOutputAndGetExitCode(cli);
+            int exitCode = await PrintColoredOutputAndGetExitCode(cli, silentMode);
 
             await cli
                 .WithValidation(CommandResultValidation.None)
@@ -20,7 +20,7 @@ namespace setupme.Services
             return exitCode;
         }
 
-        private static async Task<int> PrintColoredOutputAndGetExitCode(Command cli)
+        private static async Task<int> PrintColoredOutputAndGetExitCode(Command cli, bool silentMode)
         {
             await foreach (var command in cli.ListenAsync())
             {
@@ -32,6 +32,8 @@ namespace setupme.Services
                         Console.ResetColor();
                         break;
                     case StandardErrorCommandEvent stdErr:
+                        if (silentMode)
+                            break;
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine($"ERR> {stdErr.Text}");
                         Console.ResetColor();

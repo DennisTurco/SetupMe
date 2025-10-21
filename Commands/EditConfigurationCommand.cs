@@ -36,7 +36,7 @@ namespace SetupMe.Commands
                     .Add(filePath);
             };
 
-            await CliWrapperService.ExecuteCliCommand("cmd.exe", arguments);
+            await CliWrapperService.ExecuteCliCommand("cmd.exe", arguments, true);
         }
     }
 }

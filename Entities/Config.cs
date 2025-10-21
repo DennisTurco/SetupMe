@@ -25,6 +25,7 @@ namespace setupme.Entities
         [YamlMember(Alias = "source")] public string Source { get; set; } = string.Empty;
         [YamlMember(Alias = "quiet")] public bool Quiet { get; set; }
         [YamlMember(Alias = "confirm")] public bool Confirm { get; set; }
+        [YamlMember(Alias = "ignore-errors")] public bool IgnoreErrors { get; set; }
     }
 
     public class CustomAction

@@ -36,33 +36,66 @@ namespace SetupMe.Commands
 
             Console.WriteLine($"Running configuration {name}");
 
-            try
+            
+            var uninstallCommand = new UninstallCommand(_installers);
+            foreach (var options in config.UninstallOptions)
             {
-                var uninstallCommand = new UninstallCommand(_installers);
-                foreach (var options in config.UninstallOptions)
+                try
                 {
                     await UninstallFromConfiguration(name, options, uninstallCommand);
                 }
-
-                var upgradeCommand = new UpgradeCommand(_installers);
-                foreach (var options in config.UpgradeOptions)
+                catch (Exception ex)
                 {
-                    await UpgradeFromConfiguration(name, options, upgradeCommand);
+                    Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+                    if (!options.Flags.IgnoreErrors)
+                        return;
+                    continue;
                 }
+            }
 
-                var installCommand = new InstallCommand(_installers);
-                foreach (var options in config.InstallOptions)
+            var upgradeCommand = new UpgradeCommand(_installers);
+            foreach (var options in config.UpgradeOptions)
+            {
+                try
+                {
+                   await UpgradeFromConfiguration(name, options, upgradeCommand);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+                    if (!options.Flags.IgnoreErrors)
+                        return;
+                    continue;
+                }
+            }
+
+            var installCommand = new InstallCommand(_installers);
+            foreach (var options in config.InstallOptions)
+            {
+                try
                 {
                     await InstallFromConfiguration(name, options, installCommand);
                 }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+                    if (!options.Flags.IgnoreErrors)
+                        return;
+                    continue;
+                }
+            }
 
-                foreach (var action in config.Actions)
+            foreach (var action in config.Actions)
+            {
+                try
                 {
                     await RunAction(action);
                 }
-            } catch (Exception ex)
-            {
-                Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+                    return;
+                }
             }
         }
 
@@ -134,7 +167,7 @@ namespace SetupMe.Commands
                     args.Add(argsText);
             };
 
-            var exitCode = await CliWrapperService.ExecuteCliCommand(processName, arguments);
+            var exitCode = await CliWrapperService.ExecuteCliCommand(processName, arguments, false);
 
             if (exitCode != 0)
             {

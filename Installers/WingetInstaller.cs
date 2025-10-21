@@ -29,7 +29,7 @@ namespace SetupMe.Installers
                     args.Add("--version").Add(flags.Version);
             };
 
-            await ExecuteCommand(packageName, arguments, "install");
+            await ExecuteCommand(packageName, arguments, "install", flags.Quiet);
         }
 
         public async Task UninstallPackage(string packageName, Flags flags)
@@ -52,7 +52,7 @@ namespace SetupMe.Installers
                     args.Add("--silent");
             };
 
-            await ExecuteCommand(packageName, arguments, "uninstall");
+            await ExecuteCommand(packageName, arguments, "uninstall", flags.Quiet);
         }
 
         public async Task UpgradePackage(string packageName, Flags flags)
@@ -73,7 +73,7 @@ namespace SetupMe.Installers
                     args.Add("--silent");
             };
 
-            await ExecuteCommand(packageName, arguments, "upgrade");
+            await ExecuteCommand(packageName, arguments, "upgrade", flags.Quiet);
         }
 
         public async Task SearchPackage(string packageName)
@@ -87,12 +87,12 @@ namespace SetupMe.Installers
                 args.Add("serach").Add(packageName);
             };
 
-            await ExecuteCommand(packageName, arguments, "search");
+            await ExecuteCommand(packageName, arguments, "search", false);
         }
 
-        private async Task ExecuteCommand(string packageName, Action<ArgumentsBuilder> arguments, string actionName)
+        private async Task ExecuteCommand(string packageName, Action<ArgumentsBuilder> arguments, string actionName, bool silentMode)
         {
-            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments);
+            var exitCode = await CliWrapperService.ExecuteCliCommand("winget", arguments, silentMode);
             if (exitCode != 0)
             {
                 throw new Exception($"Winget failed to {actionName} {packageName}. Exit code: {exitCode}");
